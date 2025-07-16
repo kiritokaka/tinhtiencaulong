@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Tool Tính Tiền Cầu Lông</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin: 50px; }
+    button { padding: 10px 20px; margin: 10px; font-size: 18px; }
+    .output { font-size: 20px; margin-top: 20px; }
+    .history { margin-top: 40px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .history h2 { text-align: center; }
+  </style>
+</head>
+<body>
+
+  <h1>💰 Tool Tính Tiền Cầu Lông</h1>
+  <p>Số lượng ống cầu đã bán:</p>
+
+  <button onclick="changeAmount(-1)">➖</button>
+  <span id="sold">0</span>
+  <button onclick="changeAmount(1)">➕</button>
+
+  <div class="output">
+    <p>📦 Số hàng còn lại: <strong id="remain">50</strong> ống</p>
+    <p>🧮 Tổng tiền hàng tồn: <strong id="inventory">0₫</strong></p>
+    <p>💵 Tiền lãi: <strong id="profit">0₫</strong></p>
+  </div>
+
+  <div class="history">
+    <h2>📜 Lịch sử giao dịch</h2>
+    <ul id="historyLog"></ul>
+  </div>
+
+  <script>
+    const max = 50;
+    const importPrice = 283200;
+    const sellPrice = 295000;
+
+    let sold = parseInt(localStorage.getItem('sold')) || 0;
+    let history = JSON.parse(localStorage.getItem('history')) || [];
+
+    function changeAmount(delta) {
+      const newSold = sold + delta;
+      if (newSold < 0 || newSold > max) return;
+
+      sold = newSold;
+      localStorage.setItem('sold', sold);
+
+      const remain = max - sold;
+      const inventoryValue = remain * importPrice;
+      const profitValue = (sellPrice - importPrice) * sold;
+
+      document.getElementById('sold').innerText = sold;
+      document.getElementById('remain').innerText = remain;
+      document.getElementById('inventory').innerText = formatVND(inventoryValue);
+      document.getElementById('profit').innerText = formatVND(profitValue);
+
+      // Ghi log nếu delta != 0
+      if (delta !== 0) {
+        const entry = {
+          time: new Date().toLocaleString('vi-VN'),
+          action: delta > 0 ? `+${delta}` : `${delta}`,
+          newSold: sold,
+          remain,
+          profit: profitValue
+        };
+        history.unshift(entry); // Thêm đầu danh sách
+        localStorage.setItem('history', JSON.stringify(history));
+        renderHistory();
+      }
+    }
+
+    function renderHistory() {
+      const log = document.getElementById('historyLog');
+      log.innerHTML = '';
+      history.slice(0, 20).forEach(entry => {
+        const li = document.createElement('li');
+        li.textContent = `${entry.time} | Bán ${entry.action} ống | Còn lại: ${entry.remain} | Lãi: ${formatVND(entry.profit)}`;
+        log.appendChild(li);
+      });
+    }
+
+    function formatVND(value) {
+      return value.toLocaleString('vi-VN') + '₫';
+    }
+
+    // Khởi tạo
+    changeAmount(0);
+    renderHistory();
+  </script>
+
+</body>
+</html>
